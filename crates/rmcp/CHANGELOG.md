@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0](https://github.com/modelcontextprotocol/rust-sdk/compare/rmcp-v1.4.0...rmcp-v1.5.0) - 2026-04-14
+
+### Added
+
+- *(transport)* add constructors for non_exhaustive error types ([#806](https://github.com/modelcontextprotocol/rust-sdk/pull/806))
+- add 2025-11-25 protocol version support ([#802](https://github.com/modelcontextprotocol/rust-sdk/pull/802))
+
+### Fixed
+
+- *(http)* drain SSE stream for connection reuse ([#790](https://github.com/modelcontextprotocol/rust-sdk/pull/790))
+
+### Other
+
+- *(deps)* update which requirement from 7 to 8 ([#807](https://github.com/modelcontextprotocol/rust-sdk/pull/807))
+
 ## [1.4.0](https://github.com/modelcontextprotocol/rust-sdk/compare/rmcp-v1.3.0...rmcp-v1.4.0) - 2026-04-09
 
 ### Added
