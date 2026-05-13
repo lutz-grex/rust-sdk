@@ -1185,14 +1185,35 @@ where
                         let _ = service.waiting().await;
                     });
                     if self.config.json_response {
-                        // JSON-direct mode: await the single response and return as
-                        // application/json, eliminating SSE framing overhead.
-                        // Allowed by MCP Streamable HTTP spec (2025-06-18).
+                        // Drain intermediate notifications/requests until the
+                        // terminal Response/Error: json_response mode has no
+                        // back-channel, and tools may emit progress before
+                        // completing. Bounded by the spawned service task
+                        // dropping its OneshotTransport on completion.
+                        use crate::model::ServerJsonRpcMessage;
                         let cancel = self.config.cancellation_token.child_token();
-                        match tokio::select! {
-                            res = receiver.recv() => res,
-                            _ = cancel.cancelled() => None,
-                        } {
+                        let terminal = loop {
+                            let next = tokio::select! {
+                                res = receiver.recv() => res,
+                                _ = cancel.cancelled() => None,
+                            };
+                            match next {
+                                Some(message @ ServerJsonRpcMessage::Response(_))
+                                | Some(message @ ServerJsonRpcMessage::Error(_)) => {
+                                    break Some(message);
+                                }
+                                Some(ServerJsonRpcMessage::Notification(n)) => {
+                                    tracing::trace!(notification = ?n, "dropped pre-terminal notification");
+                                    continue;
+                                }
+                                Some(ServerJsonRpcMessage::Request(r)) => {
+                                    tracing::warn!(request = ?r, "dropped server-initiated request: no back-channel in json_response mode");
+                                    continue;
+                                }
+                                None => break None,
+                            }
+                        };
+                        match terminal {
                             Some(message) => {
                                 tracing::trace!(?message);
                                 let body = serde_json::to_vec(&message).map_err(|e| {
